@@ -52,7 +52,7 @@ A production-grade, deterministic-first backend service that parses medical lab 
                          ▼                               ▼
         ┌────────────────────────────────┐  ┌────────────────────────────────┐
         │ Exit Condition Response        │  │ Step 3: Explanation Engine     │
-        │ status: "unprocessed"          │  │ Gemini 2.5 / Flash             │
+        │ status: "unprocessed"          │  │ Gemini 3.6 / Flash             │
         │ reason: "hallucinated tests..."│  │ (or Curated Clinical Fallback) │
         └────────────────────────────────┘  └────────────────┬───────────────┘
                                                              │
