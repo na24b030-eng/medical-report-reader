@@ -1190,13 +1190,13 @@
       }
     });
 
-    async function callDirectGeminiClient(rawText, apiKey) {
+    function parseLabTextClientSide(rawText) {
       const tests = [];
       const lines = rawText.split(/[\n,;]+/);
       for (const line of lines) {
         const match = line.match(/([A-Za-z\s]+?)\s*[:=]?\s*([\d\.,]+)\s*([A-Za-z\/\%]+)?(?:\s*\((Low|High|Normal|Hgh|Lw)\))?/i);
         if (match) {
-          const name = match[1].replace(/^(CBC|HEMATOLOGY|REPORT)\s*[:\-]?\s*/i, '').trim();
+          const name = match[1].replace(/^(CBC|COMPLETE BLOOD COUNT|LAB REPORT|HEMATOLOGY|BIOCHEMISTRY|REPORT)\s*[:\-]?\s*/i, '').trim();
           const val = parseFloat(match[2].replace(/,/g, ''));
           const unit = (match[3] || '').trim();
           const flag = (match[4] || '').toLowerCase();
@@ -1212,11 +1212,32 @@
           }
         }
       }
+      if (tests.length === 0) return null;
+      const abnormal = tests.filter(t => t.status === 'low' || t.status === 'high');
+      const summary = abnormal.length === 0
+        ? "All reported lab tests are within their standard reference ranges."
+        : abnormal.map(t => `${t.status} ${t.name.toLowerCase()}`).join(' and ') + ".";
+      const explanations = abnormal.map(t => `${t.status.charAt(0).toUpperCase() + t.status.slice(1)} ${t.name} is outside typical baseline values.`);
+      return {
+        status: "ok",
+        tests: tests,
+        summary: summary,
+        final_output: { status: "ok", tests: tests, summary: summary },
+        step1_extraction: { tests_raw: tests.map(t => `${t.name} ${t.value} ${t.unit} (${t.status})`), confidence: 0.80 },
+        step2_normalization: { tests: tests, normalization_confidence: 0.84 },
+        step3_explanation: { summary: summary, explanations: explanations },
+        explanation_source: "fallback (static demo)"
+      };
+    }
+
+    async function callDirectGeminiClient(rawText, apiKey) {
+      const parsedTests = parseLabTextClientSide(rawText);
+      const tests = parsedTests ? parsedTests.tests : [];
 
       if (tests.length === 0) return null;
 
       const prompt = `You are an empathetic, clinical communicator. Explain these validated lab findings in simple plain language for a patient. Produce a 1-sentence summary and 1-sentence explanation per abnormal marker. Return strictly JSON with format: {"summary": "string", "explanations": ["string"]}\nFindings: ${JSON.stringify(tests)}`;
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       const resp = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1313,6 +1334,11 @@
         document.getElementById('loadingSkeleton').style.display = 'none';
 
         if (!response.ok) {
+          // On static hosting (like GitHub Pages), POST requests to /api/v1/... return 405 (Method Not Allowed)
+          // or 404 (Not Found). Automatically route to the static demonstration engine instead of showing an error.
+          if (response.status === 405 || response.status === 404) {
+            throw new Error("StaticHostFallback");
+          }
           const errData = await response.json().catch(() => ({}));
           const errMsg = typeof errData.detail === "string" ? errData.detail : (JSON.stringify(errData.detail) || response.statusText);
           showToast("Notice (" + response.status + "): " + errMsg);
@@ -1354,6 +1380,24 @@
         if (sampleKey && SAMPLE_RESULTS[sampleKey]) {
           renderResults(SAMPLE_RESULTS[sampleKey], trace);
           showToast(`GitHub Pages Demo: Sample ${sampleKey} Verified (Fallback Engine)`);
+          return;
+        }
+
+        // Fallback for custom text without key on static GitHub Pages
+        if (text && text.trim()) {
+          const clientParsed = parseLabTextClientSide(text);
+          if (clientParsed && clientParsed.tests.length > 0) {
+            renderResults(clientParsed, trace);
+            showToast("GitHub Pages Demo: Analyzed with Clinical Fallback");
+            return;
+          }
+        }
+
+        if (fileInput.files && fileInput.files[0]) {
+          document.getElementById('emptyState').style.display = 'block';
+          showToast("GitHub Pages is static. For image OCR, run: uvicorn app.main:app");
+          statusBadge.textContent = "Static Demo";
+          statusBadge.className = "status-badge badge-ready";
           return;
         }
 
