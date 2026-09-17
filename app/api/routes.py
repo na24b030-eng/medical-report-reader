@@ -70,6 +70,7 @@ async def simplify_report(
     content_type = request.headers.get("content-type", "").lower()
     text_input: Optional[str] = None
     image_bytes: Optional[bytes] = None
+    gemini_api_key: Optional[str] = request.headers.get("x-gemini-api-key") or request.query_params.get("gemini_api_key")
 
     if "multipart/form-data" in content_type:
         form = await request.form()
@@ -88,6 +89,8 @@ async def simplify_report(
             simulate_hallucination = str(form.get("simulate_hallucination")).lower() in ("true", "1")
         if "trace" in form:
             trace = str(form.get("trace")).lower() in ("true", "1")
+        if "gemini_api_key" in form and form.get("gemini_api_key"):
+            gemini_api_key = str(form.get("gemini_api_key")).strip()
     elif "application/json" in content_type:
         try:
             body = await request.json()
@@ -96,6 +99,8 @@ async def simplify_report(
                 simulate_hallucination = True
             if body.get("trace"):
                 trace = True
+            if body.get("gemini_api_key"):
+                gemini_api_key = str(body.get("gemini_api_key")).strip()
         except Exception:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -117,7 +122,8 @@ async def simplify_report(
         text=text_input,
         image_bytes=image_bytes,
         simulate_hallucination=simulate_hallucination,
-        return_trace=trace
+        return_trace=trace,
+        gemini_api_key=gemini_api_key
     )
     return result
 
@@ -146,14 +152,18 @@ async def step2_normalize(extraction: ExtractionResult):
     response_model=ExplanationResult,
     summary="Step 3: Patient-friendly explanation generation"
 )
-async def step3_summarize(payload: Union[List[NormalizedTest], NormalizationResult]):
+async def step3_summarize(
+    payload: Union[List[NormalizedTest], NormalizationResult],
+    request: Request
+):
     """
     Executes Step 3: Generates plain-language explanation without medical diagnosis.
     Accepts either a list of NormalizedTest or a NormalizationResult object.
     """
     tests = payload.tests if isinstance(payload, NormalizationResult) else payload
     catalog = load_catalog()
+    api_key = request.headers.get("x-gemini-api-key") or request.query_params.get("gemini_api_key")
     try:
-        return generate_explanation_with_gemini(tests, catalog)
+        return generate_explanation_with_gemini(tests, catalog, api_key=api_key)
     except Exception:
         return generate_fallback_explanation(tests, catalog)

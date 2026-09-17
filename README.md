@@ -115,7 +115,7 @@ A production-grade, deterministic-first backend service that parses medical lab 
    ```env
    GEMINI_API_KEY=your_gemini_api_key_here
    ```
-   *(Note: The system works completely out of the box even without an API key using the built-in clinical fallback engine!)*
+   *(Note: The system works completely out of the box even without an API key using the built-in clinical fallback engine! External users can also supply their own key directly in the web UI or via the `X-Gemini-API-Key` header).*
 
 4. **Start the Backend Server**:
    ```bash
@@ -125,6 +125,8 @@ A production-grade, deterministic-first backend service that parses medical lab 
 5. **Open the Interactive Web UI**:
    - **Hosted Frontend (GitHub Pages)**: [https://na24b030-eng.github.io/medical-report-reader/](https://na24b030-eng.github.io/medical-report-reader/)
    - **Local Web UI**: [http://localhost:8000/demo](http://localhost:8000/demo)
+
+   *In the Web UI, visitors can enter their own Gemini API key for live AI explanations or leave the field empty to use the server demo key or built-in clinical fallback engine.*
 
 ---
 

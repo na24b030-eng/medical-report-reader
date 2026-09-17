@@ -46,6 +46,7 @@ class AnalyzeReportRequest(BaseModel):
     text: Optional[str] = Field(None, description="Raw medical report text input")
     simulate_hallucination: Optional[bool] = Field(False, description="Testing flag to simulate ungrounded hallucination for guardrail validation")
     trace: Optional[bool] = Field(False, description="Flag to return detailed execution trace of all 4 steps")
+    gemini_api_key: Optional[str] = Field(None, description="Optional custom Gemini API key provided by external client")
 
 # Detailed trace for UI demo
 class PipelineStepTrace(BaseModel):
@@ -54,4 +55,4 @@ class PipelineStepTrace(BaseModel):
     step2_normalization: NormalizationResult
     step3_explanation: ExplanationResult
     final_output: FinalSuccessResult
-    explanation_source: Literal["gemini", "fallback"]
+    explanation_source: str = Field(..., description="Source of explanations: gemini, gemini (client key), gemini (demo key), or fallback")

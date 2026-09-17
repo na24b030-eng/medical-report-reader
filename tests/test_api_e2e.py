@@ -153,3 +153,30 @@ def test_request_timing_and_id_headers():
     assert "X-Request-ID" in response.headers
     assert "X-Process-Time-Ms" in response.headers
     assert float(response.headers["X-Process-Time-Ms"]) >= 0.0
+
+def test_custom_gemini_api_key_handling():
+    """Verify that external client-supplied API key is accepted and falls back gracefully on error."""
+    # 1. Custom key via header
+    payload = {"text": "CBC: Hemoglobin 10.2 g/dL (Low)", "trace": True}
+    response = client.post(
+        "/api/v1/simplify-report",
+        json=payload,
+        headers={"X-Gemini-API-Key": "non-existent-or-invalid-key"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["final_output"]["status"] == "ok"
+    assert data["explanation_source"] == "fallback"
+
+    # 2. Custom key via JSON body
+    payload2 = {
+        "text": "CBC: Hemoglobin 10.2 g/dL (Low)",
+        "trace": True,
+        "gemini_api_key": "another-custom-key"
+    }
+    response2 = client.post("/api/v1/simplify-report", json=payload2)
+    assert response2.status_code == 200
+    data2 = response2.json()
+    assert data2["final_output"]["status"] == "ok"
+    assert data2["explanation_source"] == "fallback"
+

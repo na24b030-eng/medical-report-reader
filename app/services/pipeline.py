@@ -23,7 +23,8 @@ def run_pipeline(
     text: Optional[str] = None,
     image_bytes: Optional[bytes] = None,
     simulate_hallucination: bool = False,
-    return_trace: bool = False
+    return_trace: bool = False,
+    gemini_api_key: Optional[str] = None
 ) -> Union[FinalSuccessResult, GuardrailExitResult, PipelineStepTrace]:
     """
     Executes the end-to-end 4-step pipeline:
@@ -100,9 +101,12 @@ def run_pipeline(
         )
 
     # Step 3: Patient-Friendly Summary (Gemini with controlled Fallback)
-    explanation_source = "gemini"
+    has_custom_key = bool(gemini_api_key and gemini_api_key.strip())
+    explanation_source = "gemini (custom key)" if has_custom_key else "gemini"
     try:
-        step3_result: ExplanationResult = generate_explanation_with_gemini(step2_result.tests, catalog)
+        step3_result: ExplanationResult = generate_explanation_with_gemini(
+            step2_result.tests, catalog, api_key=gemini_api_key
+        )
     except Exception as e:
         logger.info("Using controlled fallback explanation engine (reason: %s)", e)
         step3_result = generate_fallback_explanation(step2_result.tests, catalog)

@@ -21,26 +21,39 @@ CRITICAL RULES:
 
 _cached_client = None
 
-def get_gemini_client():
-    """Lazily instantiate and cache Gemini client instance to reuse HTTP connection pool."""
+def get_gemini_client(api_key: Optional[str] = None):
+    """Lazily instantiate and cache default Gemini client, or return client with custom API key."""
     global _cached_client
+    from google import genai
+    from google.genai import types
+
+    target_key = (api_key or "").strip() or settings.GEMINI_API_KEY.strip()
+    if not target_key:
+        raise RuntimeError("GEMINI_API_KEY is not configured.")
+
+    http_opts = types.HttpOptions(timeout=int(settings.GEMINI_TIMEOUT_SECONDS * 1000)) if hasattr(types, "HttpOptions") else None
+
+    # If a custom key is provided that differs from server settings, create on-demand client
+    if target_key != settings.GEMINI_API_KEY.strip():
+        return genai.Client(api_key=target_key, http_options=http_opts) if http_opts else genai.Client(api_key=target_key)
+
     if _cached_client is None:
-        from google import genai
-        from google.genai import types
-        http_opts = types.HttpOptions(timeout=int(settings.GEMINI_TIMEOUT_SECONDS * 1000)) if hasattr(types, "HttpOptions") else None
-        _cached_client = genai.Client(api_key=settings.GEMINI_API_KEY, http_options=http_opts) if http_opts else genai.Client(api_key=settings.GEMINI_API_KEY)
+        _cached_client = genai.Client(api_key=target_key, http_options=http_opts) if http_opts else genai.Client(api_key=target_key)
     return _cached_client
 
 def generate_explanation_with_gemini(
     tests: List[NormalizedTest],
-    catalog: Dict[str, Any]
+    catalog: Dict[str, Any],
+    api_key: Optional[str] = None
 ) -> ExplanationResult:
     """
     Calls Google Gemini using the official google-genai SDK to generate patient-friendly explanations.
+    Supports either a caller-provided custom API key or the default server demo key.
     Validates output against hallucination guards.
-    Raises an exception if Gemini is unconfigured, times out, or fails validation.
+    Raises an exception if unconfigured, timed out, or validation fails.
     """
-    if not settings.GEMINI_API_KEY or not settings.GEMINI_API_KEY.strip():
+    effective_key = (api_key or "").strip() or settings.GEMINI_API_KEY.strip()
+    if not effective_key:
         raise RuntimeError("GEMINI_API_KEY is not configured.")
 
     from google.genai import types
@@ -62,7 +75,7 @@ def generate_explanation_with_gemini(
         f"Please explain these findings in plain language for the patient following the system instructions."
     )
 
-    client = get_gemini_client()
+    client = get_gemini_client(api_key=effective_key)
 
     try:
         response = client.models.generate_content(
