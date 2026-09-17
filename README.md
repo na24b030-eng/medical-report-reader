@@ -3,9 +3,6 @@
 A production-grade, deterministic-first backend service that parses medical lab reports (both typed text and scanned images), normalizes lab tests against standard reference catalogs, enforces strict source-evidence guardrails to prevent hallucinations, and generates patient-friendly explanations with Google Gemini and an offline-resilient fallback engine.
 
 - **Live Web Application (GitHub Pages)**: [https://na24b030-eng.github.io/medical-report-reader/](https://na24b030-eng.github.io/medical-report-reader/)
-- **Local Interactive UI**: [http://localhost:8000/demo](http://localhost:8000/demo)
-- **Repository**: [https://github.com/na24b030-eng/medical-report-reader](https://github.com/na24b030-eng/medical-report-reader)
-
 ---
 
 ## Architectural Overview and Core Principles
