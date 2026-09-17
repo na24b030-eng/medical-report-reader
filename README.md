@@ -1,10 +1,14 @@
-# 🩺 AI-Powered Medical Report Simplifier
+# AI-Powered Medical Report Simplifier
 
 A production-grade, deterministic-first backend service that parses medical lab reports (both typed text and scanned images), normalizes lab tests against standard reference catalogs, enforces strict source-evidence guardrails to prevent hallucinations, and generates patient-friendly explanations with Google Gemini and an offline-resilient fallback engine.
 
+- **Live Web Application (GitHub Pages)**: [https://na24b030-eng.github.io/medical-report-reader/](https://na24b030-eng.github.io/medical-report-reader/)
+- **Local Interactive UI**: [http://localhost:8000/demo](http://localhost:8000/demo)
+- **Repository**: [https://github.com/na24b030-eng/medical-report-reader](https://github.com/na24b030-eng/medical-report-reader)
+
 ---
 
-## 🏛️ Architectural Overview & Core Principles
+## Architectural Overview and Core Principles
 
 ```
                   ┌──────────────────────────────────────────────┐
@@ -42,7 +46,7 @@ A production-grade, deterministic-first backend service that parses medical lab 
                                          │
                                          ▼
                  ┌───────────────────────────────────────────────┐
-                 │ 🛡️ Strict Guardrail: Source Evidence Check    │
+                 │ Strict Guardrail: Source Evidence Check       │
                  │ Checks that EVERY test is grounded in input   │
                  └───────┬───────────────────────────────┬───────┘
                          │                               │
@@ -77,7 +81,7 @@ A production-grade, deterministic-first backend service that parses medical lab 
 
 ---
 
-## 🚀 Setup & Quickstart
+## Setup and Quickstart
 
 ### Prerequisites
 - Python 3.10+ (tested on Python 3.14)
@@ -87,8 +91,8 @@ A production-grade, deterministic-first backend service that parses medical lab 
 
 1. **Clone the repository**:
    ```bash
-   git clone <repo-url>
-   cd Plum
+   git clone https://github.com/na24b030-eng/medical-report-reader.git
+   cd medical-report-reader
    ```
 
 2. **Create virtual environment & install dependencies**:
@@ -122,11 +126,12 @@ A production-grade, deterministic-first backend service that parses medical lab 
    ```
 
 5. **Open the Interactive Web UI**:
-   Visit [http://localhost:8000/demo](http://localhost:8000/demo) in your browser.
+   - **Hosted Frontend (GitHub Pages)**: [https://na24b030-eng.github.io/medical-report-reader/](https://na24b030-eng.github.io/medical-report-reader/)
+   - **Local Web UI**: [http://localhost:8000/demo](http://localhost:8000/demo)
 
 ---
 
-## 📡 API Usage & Sample Requests
+## API Usage and Sample Requests
 
 ### 1. Main Unified Endpoint: `/api/v1/simplify-report`
 
@@ -241,7 +246,7 @@ curl -X POST http://localhost:8000/api/v1/simplify-report \
 
 ---
 
-## 🧪 Running Automated Tests
+## Running Automated Tests
 
 Run the complete test suite covering all four steps, OCR, normalizer, guardrails, and API integration:
 
@@ -251,9 +256,18 @@ Run the complete test suite covering all four steps, OCR, normalizer, guardrails
 
 ---
 
-## 🌐 Exposing Demo with ngrok
+## Frontend Web Application and Live Demo Access
 
-To share your live backend demo as required in submission instructions:
+### 1. Hosted Web Application (GitHub Pages)
+The client-side demo interface is hosted on GitHub Pages:
+- **Live URL**: [https://na24b030-eng.github.io/medical-report-reader/](https://na24b030-eng.github.io/medical-report-reader/)
+
+### 2. Local Interactive Web UI
+When running the FastAPI server locally:
+- **Local URL**: [http://localhost:8000/demo](http://localhost:8000/demo)
+
+### 3. Exposing Local Backend for Remote Access (ngrok)
+To share your live local backend instance with external reviewers:
 
 1. Start your local server:
    ```bash
@@ -263,4 +277,5 @@ To share your live backend demo as required in submission instructions:
    ```bash
    ngrok http 8000
    ```
-3. Copy the generated public URL (e.g. `https://xyz.ngrok-free.app`) and append `/demo` to view the interactive web UI, or send cURL requests directly to `/api/v1/simplify-report`.
+3. Copy the generated public URL (e.g. `https://xyz.ngrok-free.app`) and append `/demo` to view the interactive web UI, or send requests directly to `/api/v1/simplify-report`.
+
