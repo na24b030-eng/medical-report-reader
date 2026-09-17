@@ -1,0 +1,3 @@
+CBC:
+Hemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0
+WBC 11,200 /uL (High) Reference: 4000-11000

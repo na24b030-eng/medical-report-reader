@@ -1,0 +1,68 @@
+{
+  "tests": [
+    {
+      "name": "Hemoglobin",
+      "value": 10.2,
+      "unit": "g/dL",
+      "status": "low",
+      "ref_range": {
+        "low": 12,
+        "high": 15
+      }
+    },
+    {
+      "name": "WBC",
+      "value": 11200,
+      "unit": "/uL",
+      "status": "high",
+      "ref_range": {
+        "low": 4000,
+        "high": 11000
+      }
+    }
+  ],
+  "summary": "Hemoglobin: low; WBC: high.",
+  "status": "ok",
+  "explanations": [
+    {
+      "name": "Hemoglobin",
+      "text": "Hemoglobin is the protein in red blood cells that carries oxygen. This result is below the reference range provided in the report."
+    },
+    {
+      "name": "WBC",
+      "text": "White blood cells are part of your immune system. This result is above the reference range provided in the report."
+    }
+  ],
+  "metadata": {
+    "mode": "demo",
+    "source_text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000",
+    "tests_raw": [
+      "Hemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0",
+      "WBC 11,200 /uL (High) Reference: 4000-11000"
+    ],
+    "evidence": [
+      {
+        "name": "Hemoglobin",
+        "source": "Hemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0",
+        "raw_name": "Hemoglobin",
+        "raw_value": "10.2",
+        "raw_unit": "g/dL",
+        "multiplier": 1,
+        "status_basis": "report_range"
+      },
+      {
+        "name": "WBC",
+        "source": "WBC 11,200 /uL (High) Reference: 4000-11000",
+        "raw_name": "WBC",
+        "raw_value": "11,200",
+        "raw_unit": "/uL",
+        "multiplier": 1,
+        "status_basis": "report_range"
+      }
+    ],
+    "validation": "Values, units, ranges and statuses were parsed and validated by deterministic code.",
+    "confidence": null,
+    "confidence_note": "No calibrated clinical confidence score is available.",
+    "note": "Educational explanation, not a diagnosis. Review results with your clinician."
+  }
+}

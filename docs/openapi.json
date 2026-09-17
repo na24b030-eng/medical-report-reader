@@ -1,0 +1,528 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI-Powered Medical Report Simplifier",
+    "description": "A robust backend service for OCR, test normalization, anti-hallucination guardrails, and plain-language patient explanations.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Medical Report Simplifier"
+        ],
+        "summary": "Health Check",
+        "description": "Health check endpoint providing status of dependencies.",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simplify-report": {
+      "post": {
+        "tags": [
+          "Medical Report Simplifier"
+        ],
+        "summary": "Main unified endpoint for medical report simplification",
+        "description": "Accepts either:\n1. application/json with {\"text\": \"CBC: Hemoglobin 10.2 g/dL (Low)...\"}\n2. multipart/form-data with an image file\nExecutes the 4-step pipeline and returns the normalized tests, summary, and status.",
+        "operationId": "simplify_report_api_v1_simplify_report_post",
+        "parameters": [
+          {
+            "name": "trace",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Trace"
+            }
+          },
+          {
+            "name": "simulate_hallucination",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Simulate Hallucination"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FinalSuccessResult"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GuardrailExitResult"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PipelineStepTrace"
+                    }
+                  ],
+                  "title": "Response Simplify Report Api V1 Simplify Report Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/extract-text": {
+      "post": {
+        "tags": [
+          "Medical Report Simplifier"
+        ],
+        "summary": "Step 1: Extract test names, values, units; fix minor typos",
+        "description": "Executes Step 1: Extracts tests_raw and confidence.",
+        "operationId": "step1_extract_api_v1_extract_text_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Step1Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/normalize-tests": {
+      "post": {
+        "tags": [
+          "Medical Report Simplifier"
+        ],
+        "summary": "Step 2: Standardize names, units, ranges, and statuses",
+        "description": "Executes Step 2: Converts tests_raw into NormalizedTest objects with ranges.",
+        "operationId": "step2_normalize_api_v1_normalize_tests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractionResult"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NormalizationResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/summarize": {
+      "post": {
+        "tags": [
+          "Medical Report Simplifier"
+        ],
+        "summary": "Step 3: Patient-friendly explanation generation",
+        "description": "Executes Step 3: Generates plain-language explanation without medical diagnosis.\nAccepts either a list of NormalizedTest or a NormalizationResult object.",
+        "operationId": "step3_summarize_api_v1_summarize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "$ref": "#/components/schemas/NormalizedTest"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NormalizationResult"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplanationResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ExplanationResult": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "One-sentence plain-language overview of abnormal findings"
+          },
+          "explanations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Explanations",
+            "description": "Plain-language, non-diagnostic explanations for abnormal findings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "explanations"
+        ],
+        "title": "ExplanationResult"
+      },
+      "ExtractionResult": {
+        "properties": {
+          "tests_raw": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tests Raw",
+            "description": "List of raw test lines extracted from text/image with typos corrected"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "description": "Confidence score for the extraction step",
+            "default": 0.8
+          }
+        },
+        "type": "object",
+        "required": [
+          "tests_raw"
+        ],
+        "title": "ExtractionResult"
+      },
+      "FinalSuccessResult": {
+        "properties": {
+          "tests": {
+            "items": {
+              "$ref": "#/components/schemas/NormalizedTest"
+            },
+            "type": "array",
+            "title": "Tests",
+            "description": "Normalized lab test results"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "Patient-friendly summary"
+          },
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tests",
+          "summary"
+        ],
+        "title": "FinalSuccessResult"
+      },
+      "GuardrailExitResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "unprocessed",
+            "title": "Status",
+            "default": "unprocessed"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "Reason the processing was stopped",
+            "default": "hallucinated tests not present in input"
+          }
+        },
+        "type": "object",
+        "title": "GuardrailExitResult"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "NormalizationResult": {
+        "properties": {
+          "tests": {
+            "items": {
+              "$ref": "#/components/schemas/NormalizedTest"
+            },
+            "type": "array",
+            "title": "Tests",
+            "description": "List of standardized, validated medical test items"
+          },
+          "normalization_confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Normalization Confidence",
+            "description": "Confidence score for the normalization step",
+            "default": 0.84
+          }
+        },
+        "type": "object",
+        "required": [
+          "tests"
+        ],
+        "title": "NormalizationResult"
+      },
+      "NormalizedTest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Standardized test name"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Value",
+            "description": "Numeric test value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "description": "Standardized unit of measurement"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "low",
+              "high",
+              "normal"
+            ],
+            "title": "Status",
+            "description": "Clinical status relative to reference range"
+          },
+          "ref_range": {
+            "$ref": "#/components/schemas/RefRange",
+            "description": "Reference range for standard adult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "value",
+          "unit",
+          "status",
+          "ref_range"
+        ],
+        "title": "NormalizedTest"
+      },
+      "PipelineStepTrace": {
+        "properties": {
+          "raw_ocr_or_text": {
+            "type": "string",
+            "title": "Raw Ocr Or Text"
+          },
+          "step1_extraction": {
+            "$ref": "#/components/schemas/ExtractionResult"
+          },
+          "step2_normalization": {
+            "$ref": "#/components/schemas/NormalizationResult"
+          },
+          "step3_explanation": {
+            "$ref": "#/components/schemas/ExplanationResult"
+          },
+          "final_output": {
+            "$ref": "#/components/schemas/FinalSuccessResult"
+          },
+          "explanation_source": {
+            "type": "string",
+            "enum": [
+              "gemini",
+              "fallback"
+            ],
+            "title": "Explanation Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "raw_ocr_or_text",
+          "step1_extraction",
+          "step2_normalization",
+          "step3_explanation",
+          "final_output",
+          "explanation_source"
+        ],
+        "title": "PipelineStepTrace"
+      },
+      "RefRange": {
+        "properties": {
+          "low": {
+            "type": "number",
+            "title": "Low",
+            "description": "Lower bound of reference range"
+          },
+          "high": {
+            "type": "number",
+            "title": "High",
+            "description": "Upper bound of reference range"
+          }
+        },
+        "type": "object",
+        "required": [
+          "low",
+          "high"
+        ],
+        "title": "RefRange"
+      },
+      "Step1Request": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Raw report text",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "Step1Request"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "info": {
+    "name": "AI-Powered Medical Report Simplifier API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection covering the 4-step pipeline, deterministic normalizers, OCR, anti-hallucination guardrails, and catalog endpoints."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/health"
+      }
+    },
+    {
+      "name": "Medical Biomarker Catalog",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/catalog"
+      }
+    },
+    {
+      "name": "1. Simplify Report - Typed Text (Sample 1)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"CBC: Hemoglobin 10.2 g/dL (Low) , WBC 11,200 /uL (High)\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/simplify-report"
+      }
+    },
+    {
+      "name": "2. Simplify Report - OCR Typos (Sample 2)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"CBC: Hemglobin 10.2 g/dL (Low)\\nWBC 11200 /uL (Hgh)\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/simplify-report"
+      }
+    },
+    {
+      "name": "3. Simplify Report - Full Execution Trace",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"CBC: Hemoglobin 10.2 g/dL (Low) , WBC 11,200 /uL (High)\",\n  \"trace\": true\n}"
+        },
+        "url": "{{base_url}}/api/v1/simplify-report"
+      }
+    },
+    {
+      "name": "4. Guardrail Verification (Ungrounded Simulation)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"CBC: Hemoglobin 10.2 g/dL (Low)\",\n  \"simulate_hallucination\": true\n}"
+        },
+        "url": "{{base_url}}/api/v1/simplify-report"
+      }
+    },
+    {
+      "name": "Step 1: Extract Text & Fix Typos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"CBC: Hemglobin 10.2 g/dL (Low)\\nWBC 11200 /uL (Hgh)\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/extract-text"
+      }
+    },
+    {
+      "name": "Step 2: Normalize Tests & Reference Ranges",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tests_raw\": [\n    \"Hemoglobin 10.2 g/dL (Low)\",\n    \"WBC 11200 /uL (High)\"\n  ],\n  \"confidence\": 0.8\n}"
+        },
+        "url": "{{base_url}}/api/v1/normalize-tests"
+      }
+    },
+    {
+      "name": "Step 3: Generate Plain-Language Summary",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tests\": [\n    {\n      \"name\": \"Hemoglobin\",\n      \"value\": 10.2,\n      \"unit\": \"g/dL\",\n      \"status\": \"low\",\n      \"ref_range\": {\n        \"low\": 12.0,\n        \"high\": 15.0\n      }\n    },\n    {\n      \"name\": \"WBC\",\n      \"value\": 11200,\n      \"unit\": \"/uL\",\n      \"status\": \"high\",\n      \"ref_range\": {\n        \"low\": 4000.0,\n        \"high\": 11000.0\n      }\n    }\n  ]\n}"
+        },
+        "url": "{{base_url}}/api/v1/summarize"
+      }
+    }
+  ]
+}

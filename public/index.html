@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A clearer way to understand your lab report."
+    />
+    <title>Plum - Your report, in plain language</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/" class="brand" aria-label="Plum home"
+        ><span class="mark">p</span> plum<span class="brand-note"
+          >REPORT READER</span
+        ></a
+      >
+    </header>
+    <main>
+      <section class="intro">
+        <span class="eyebrow"
+          ><span></span> A LITTLE CLARITY GOES A LONG WAY</span
+        >
+        <h1>Your report.<br /><em>In plain language.</em></h1>
+        <p>
+          Make sense of the numbers with simple explanations,<br
+            class="desktop"
+          />
+          grounded in what your report actually says.
+        </p>
+      </section>
+      <section class="workspace" aria-label="Report simplifier">
+        <div class="input-panel card">
+          <div class="panel-heading">
+            <div>
+              <span class="step">01 / YOUR REPORT</span>
+              <h2>Let’s take a look.</h2>
+            </div>
+            <span class="little-icon" aria-hidden="true">↗</span>
+          </div>
+          <div class="tabs" role="tablist" aria-label="Report input">
+            <button
+              class="tab active"
+              role="tab"
+              aria-selected="true"
+              aria-controls="text-panel"
+              id="text-tab"
+            >
+              Paste text</button
+            ><button
+              class="tab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="image-panel"
+              id="image-tab"
+              tabindex="-1"
+            >
+              Upload image
+            </button>
+          </div>
+          <form id="report-form">
+            <div class="key-section">
+              <label for="api-key"
+                >Your Gemini API key
+                <span class="key-tag">OPTIONAL LANGUAGE HELP</span></label
+              >
+              <div class="key-input">
+                <input
+                  id="api-key"
+                  type="password"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Paste your API key"
+                  maxlength="500"
+                  aria-describedby="key-note"
+                /><button
+                  type="button"
+                  id="clear-key"
+                  aria-label="Clear API key"
+                >
+                  Clear
+                </button>
+              </div>
+              <p id="key-note">
+                Optional: Gemini selects simpler wording for verified findings.
+                Uses your quota; key is never saved.
+                <a
+                  href="https://aistudio.google.com/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Get a key ↗</a
+                >
+              </p>
+            </div>
+            <div id="text-panel" role="tabpanel" aria-labelledby="text-tab">
+              <label for="report-text">Report details</label
+              ><textarea
+                id="report-text"
+                maxlength="20000"
+                placeholder="Paste your test results here…&#10;&#10;Hemoglobin 10.2 g/dL (Low)&#10;WBC 11,200 /uL (High)"
+              ></textarea>
+              <div class="field-note">
+                <span>Include units and reference ranges, if available.</span
+                ><span id="char-count">0 / 20,000</span>
+              </div>
+            </div>
+            <div
+              id="image-panel"
+              role="tabpanel"
+              aria-labelledby="image-tab"
+              hidden
+            >
+              <label class="drop-zone" id="drop-zone" for="report-image"
+                ><span class="upload-symbol" aria-hidden="true">↑</span
+                ><strong id="file-label">Choose a report image</strong
+                ><span>or drag and drop it here</span
+                ><small>PNG, JPG or WebP · up to 5 MB</small
+                ><input
+                  id="report-image"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp" /></label
+              ><img id="image-preview" alt="Selected report preview" hidden />
+            </div>
+            <p class="privacy">
+              Remove personal details before submitting. Images and values are
+              processed on this server. Only approved explanation choices are
+              sent to Gemini if you supply a key.
+            </p>
+            <button class="primary" id="submit-button" type="submit">
+              <span>Simplify my report</span><span aria-hidden="true">→</span>
+            </button>
+          </form>
+          <div class="demo-row">
+            <span>Just exploring?</span
+            ><button id="demo-button" class="text-button">
+              Try a sample report <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <div class="error" id="error" role="alert" hidden></div>
+        </div>
+        <div
+          class="output-panel card"
+          aria-live="polite"
+          aria-busy="false"
+          id="output-panel"
+        >
+          <div class="panel-heading">
+            <div>
+              <span class="step">02 / A CLEARER PICTURE</span>
+              <h2>Your results, explained.</h2>
+            </div>
+            <span class="result-badge" id="result-badge"
+              >Ready when you are</span
+            >
+          </div>
+          <div class="empty-state" id="empty-state">
+            <div class="report-art" aria-hidden="true">
+              <div class="art-leaf"></div>
+              <div class="art-line long"></div>
+              <div class="art-line"></div>
+              <div class="art-result"><span></span><i></i></div>
+              <div class="art-result"><span></span><i></i></div>
+              <div class="art-check">✓</div>
+            </div>
+            <h3>A little less “what does that mean?”</h3>
+            <p>
+              Add your report to see the key findings<br />and what each test
+              measures.
+            </p>
+            <div class="empty-chips">
+              <span>Clear explanations</span><span>Source-checked results</span>
+            </div>
+          </div>
+          <div id="loading-state" hidden>
+            <div class="spinner"></div>
+            <h3>Making things clearer…</h3>
+            <p>Reading your report and checking the results.</p>
+          </div>
+          <div id="results" hidden>
+            <div class="summary-box">
+              <span class="eyebrow">AT A GLANCE</span>
+              <p id="summary"></p>
+            </div>
+            <div id="test-list"></div>
+            <p class="result-note" id="result-note"></p>
+            <details>
+              <summary>View source text & API response</summary>
+              <h4>Source text</h4>
+              <pre id="source-text"></pre>
+              <h4>JSON response</h4>
+              <pre id="json-output"></pre>
+              <button id="download-button" class="text-button">
+                Download JSON ↓
+              </button>
+            </details>
+          </div>
+        </div>
+      </section>
+      <section class="principles" aria-label="How it works">
+        <div>
+          <span>01</span>
+          <p>
+            <strong>Your report is the source</strong>Results are checked
+            against the extracted text.
+          </p>
+        </div>
+        <div>
+          <span>02</span>
+          <p>
+            <strong>Clarity, without the guesswork</strong>Unclear readings are
+            flagged for review.
+          </p>
+        </div>
+        <div>
+          <span>03</span>
+          <p>
+            <strong>A starting point for a conversation</strong>Understand your
+            results with your clinician.
+          </p>
+        </div>
+      </section>
+      <footer>
+        <span>Made for a little more peace of mind.</span
+        ><span>Educational explanations · Not a diagnosis</span>
+      </footer>
+    </main>
+  </body>
+</html>

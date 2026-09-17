@@ -1,0 +1,8 @@
+node_modules
+.git
+.env
+.env.*
+tmp
+test-results
+submission
+Plum - FullStack.pdf
