@@ -267,7 +267,8 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "Image",
-            "description": "PNG, JPEG or WebP; max 5 MB, 16 megapixels; crop to result lines"
+            "description": "PNG, JPEG or WebP; max 5 MB, 16 megapixels; crop to result lines",
+            "format": "binary"
           },
           "use_gemini": {
             "type": "boolean",

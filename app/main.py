@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import APIKeyHeader
 from fastapi.staticfiles import StaticFiles
@@ -101,7 +102,7 @@ def create_app(pipeline: Pipeline | None = None, ocr: LocalOCR | None = None) ->
             swagger_css_url="/docs-assets/swagger-ui.css",
             swagger_favicon_url="/docs-assets/favicon-32x32.png",
             swagger_ui_parameters={
-                "docExpansion": "none",
+                "docExpansion": "list",
                 "defaultModelsExpandDepth": -1,
                 "persistAuthorization": False,
             },
@@ -109,6 +110,24 @@ def create_app(pipeline: Pipeline | None = None, ocr: LocalOCR | None = None) ->
 
     app.state.pipeline = pipeline or Pipeline(GeminiLanguage(settings.gemini_model))
     app.state.ocr = ocr or LocalOCR(settings.ocr_min_confidence)
+
+    def custom_openapi():
+        if app.openapi_schema:
+            return app.openapi_schema
+        schema = get_openapi(
+            title=app.title,
+            version=app.version,
+            description=app.description,
+            routes=app.routes,
+        )
+        for comp in schema.get("components", {}).get("schemas", {}).values():
+            for prop in comp.get("properties", {}).values():
+                if prop.get("contentMediaType") == "application/octet-stream":
+                    prop["format"] = "binary"
+        app.openapi_schema = schema
+        return app.openapi_schema
+
+    app.openapi = custom_openapi
     slots = threading.BoundedSemaphore(3)
 
     @asynccontextmanager
