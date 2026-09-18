@@ -26,5 +26,6 @@ jobs:
       - name: Run automated test suite
         env:
           GEMINI_API_KEY: ""
+          PYTHONPATH: "."
         run: |
-          pytest tests/ -v
+          python -m pytest tests/ -v

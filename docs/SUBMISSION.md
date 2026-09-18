@@ -4,13 +4,13 @@
 
 | Requirement | Prepared artifact | Final verification |
 | --- | --- | --- |
-| Working backend demo | FastAPI service, Dockerfile, browser UI | Supply a hosted HTTPS URL or keep a local tunnel running |
+| Working backend demo | FastAPI service, Dockerfile, Swagger UI (/docs) | Supply a hosted HTTPS URL or keep a local tunnel running |
 | GitHub repository | Isolated local Git repository | Push to the intended GitHub repository |
 | Setup, architecture, API examples | README.md | Run `uvicorn app.main:app` and `pytest tests/` from a fresh checkout |
 | curl/Postman requests | README.md, docs/Plum.postman_collection.json | Import the collection or run documented cURL commands |
 | JSON schemas | docs/openapi.json | Inspect successful and unprocessed responses |
 | Sample typed/scanned input | samples/report.txt, samples/sample_report.png | Run `pytest tests/` with automated OCR & text fixtures |
-| Screen recording | Interactive Web UI at `/demo` | Screen recording demonstrating text parsing, image OCR, and guardrail |
+| Screen recording | Interactive Swagger UI at `/docs` or terminal | Screen recording demonstrating text parsing, image OCR, and guardrail |
 
 ## Local verification
 
@@ -22,7 +22,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # Run automated test suite
-pytest tests/ -v
+python -m pytest tests/ -v
 
 # Start FastAPI backend server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -33,7 +33,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Create a `.env` file at project root with:
 ```env
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.6-flash
 ```
 Local OCR and deterministic normalizers run completely offline without an API key. When Gemini is unavailable or rate-limited, the system seamlessly applies the clinical fallback engine.
 
@@ -42,8 +42,8 @@ Local OCR and deterministic normalizers run completely offline without an API ke
 The service runs on any Python 3.10+ host or Docker environment on port 8000. No external database is required.
 
 - Health route: `/api/v1/health`
-- Interactive Demo UI: `/demo`
-- OpenAPI Documentation: `/docs` and `/redoc`
+- Interactive OpenAPI Documentation: `/docs` and `/redoc`
+- Public Catalog: `/api/v1/catalog`
 
 Docker commands:
 
@@ -57,7 +57,7 @@ For the brief's allowed local demo, start the app then run `ngrok http 8000` wit
 
 ## Recording outline
 
-1. Show the interface and run the clearly labeled no-key sample.
+1. Open Swagger UI at `/docs` or terminal and run the standard text sample.
 2. Show the tests, reference ranges, source evidence, and combined JSON.
 3. Process the synthetic text through Gemini using a masked key.
 4. Upload samples/report.png and show the OCR results.
@@ -77,8 +77,6 @@ For the brief's allowed local demo, start the app then run `ngrok http 8000` wit
 
 Repository: https://github.com/na24b030-eng/medical-report-reader
 
-Working demo: [insert the verified HTTPS URL]
+Working backend demo: [insert the verified HTTPS URL or ngrok URL]
 
-Recording: [attach submission/live-demo.webm or insert its sharing URL]
-
-Setup and API documentation are in README.md. A Postman collection, OpenAPI schema, synthetic text/image fixtures, and automated backend/browser tests are included. Text processing and local image OCR work without a key. Optional Gemini wording uses each reviewer's own key.
+Setup and API documentation are in README.md. A Postman collection, OpenAPI schema, synthetic text/image fixtures, and automated backend tests are included. Text processing and local image OCR work without a key. Optional Gemini wording uses each reviewer's own key.

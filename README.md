@@ -2,7 +2,6 @@
 
 A production-grade, deterministic-first backend service that parses medical lab reports (both typed text and scanned images), normalizes lab tests against standard reference catalogs, enforces strict source-evidence guardrails to prevent hallucinations, and generates patient-friendly explanations with Google Gemini and an offline-resilient fallback engine.
 
-- **Live Web Application (GitHub Pages)**: [https://na24b030-eng.github.io/medical-report-reader/](https://na24b030-eng.github.io/medical-report-reader/)
 ---
 
 ## Architectural Overview and Core Principles
@@ -255,18 +254,18 @@ Run the complete test suite covering all four steps, OCR, normalizer, guardrails
 
 ---
 
-## Frontend Web Application and Live Demo Access
+## Interactive API Documentation and Remote Access
 
-### 1. Hosted Web Application (GitHub Pages)
-The client-side demo interface is hosted on GitHub Pages:
-- **Live URL**: [https://na24b030-eng.github.io/medical-report-reader/](https://na24b030-eng.github.io/medical-report-reader/)
-
-### 2. Local Interactive Web UI
+### 1. Interactive Swagger UI
 When running the FastAPI server locally:
-- **Local URL**: [http://localhost:8000/demo](http://localhost:8000/demo)
+- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc UI**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **OpenAPI JSON**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
 
-### 3. Exposing Local Backend for Remote Access (ngrok)
-To share your live local backend instance with external reviewers:
+The Swagger UI allows interactive execution and testing of all endpoints directly in the browser with full schema validation and response inspection.
+
+### 2. Exposing Local Backend for Remote Access (ngrok)
+To share your live backend instance with external reviewers:
 
 1. Start your local server:
    ```bash
@@ -276,5 +275,5 @@ To share your live local backend instance with external reviewers:
    ```bash
    ngrok http 8000
    ```
-3. Copy the generated public URL (e.g. `https://xyz.ngrok-free.app`) and append `/demo` to view the interactive web UI, or send requests directly to `/api/v1/simplify-report`.
+3. Share the generated public HTTPS URL (e.g. `https://xyz.ngrok-free.app/docs`) for remote Swagger UI testing, or send API requests directly to `https://xyz.ngrok-free.app/api/v1/simplify-report`.
 
