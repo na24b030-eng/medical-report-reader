@@ -83,3 +83,40 @@ def test_offsets_and_micro_unit_variants():
     tests, evidence, source = parse("WBC 11200 /µL (High)")
     assert tests[0].unit == "/uL"
     assert source[evidence[0].source_start : evidence[0].source_end] == evidence[0].source_text
+
+
+def test_edge_case_formats_and_variations():
+    cases = [
+        ("Creatinine .9 mg/dL Reference: 0.7-1.3", "Creatinine", 0.9, "normal"),
+        ("Hemoglobin - 10.2 g/dL Reference: 12-15", "Hemoglobin", 10.2, "low"),
+        ("Hemoglobin 10.2 g / dL Reference: 12-15", "Hemoglobin", 10.2, "low"),
+        ("Hemoglobin 10.2 g/dL Reference: 12.0 to 15.0", "Hemoglobin", 10.2, "low"),
+        ("Glucose 95 mg / dL Ref. Range: 70 to 99", "Glucose", 95.0, "normal"),
+    ]
+    for text, expected_name, expected_val, expected_status in cases:
+        tests, evidence, source = parse(text)
+        assert tests[0].name == expected_name
+        assert tests[0].value == expected_val
+        assert tests[0].status == expected_status
+        verify(tests, evidence, source)
+
+
+def test_full_hospital_lab_report_with_headers_and_footers():
+    report = """
+METROPOLIS HEALTHCARE LABS - FINAL LAB REPORT
+Patient Name: Jane Doe | Age: 42 | Gender: Female | Date: 18-Sep-2026
+Ordering Physician: Dr. Rajesh Sharma, MD
+----------------------------------------------------------------------
+COMPLETE BLOOD COUNT (CBC)
+Hemoglobin              10.2 g/dL       (Low)     Reference: 12.0-15.0
+WBC                     11,200 /uL      (High)    Reference: 4000-11000
+Platelets               250,000 /uL     (Normal)  Reference: 150000-450000
+----------------------------------------------------------------------
+Notes: Sample collected in EDTA vacutainer.
+Verified by: Dr. Sharma - END OF REPORT
+"""
+    tests, evidence, source = parse(report)
+    assert [t.name for t in tests] == ["Hemoglobin", "WBC", "Platelets"]
+    assert [t.value for t in tests] == [10.2, 11200.0, 250000.0]
+    assert [t.status for t in tests] == ["low", "high", "normal"]
+    verify(tests, evidence, source)

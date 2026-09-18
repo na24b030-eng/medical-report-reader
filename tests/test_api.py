@@ -179,3 +179,26 @@ def test_hallucinated_nlp_content_exits_unprocessed():
         )
     assert result.status_code == 422
     assert result.json()["status"] == "unprocessed"
+
+
+def test_realistic_lab_report_via_api(client):
+    report = """
+METROPOLIS HEALTHCARE LABS - FINAL LAB REPORT
+Patient Name: Jane Doe | Age: 42 | Gender: Female | Date: 18-Sep-2026
+Ordering Physician: Dr. Rajesh Sharma, MD
+----------------------------------------------------------------------
+COMPLETE BLOOD COUNT (CBC)
+Hemoglobin              10.2 g/dL       (Low)     Reference: 12.0-15.0
+WBC                     11,200 /uL      (High)    Reference: 4000-11000
+Platelets               250,000 /uL     (Normal)  Reference: 150000-450000
+----------------------------------------------------------------------
+Notes: Sample collected in EDTA vacutainer.
+Verified by: Dr. Sharma - END OF REPORT
+"""
+    response = client.post("/reports/simplify/text", json={"text": report})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert len(data["tests"]) == 3
+    assert [t["name"] for t in data["tests"]] == ["Hemoglobin", "WBC", "Platelets"]
+    assert [t["status"] for t in data["tests"]] == ["low", "high", "normal"]
