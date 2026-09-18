@@ -78,6 +78,12 @@ docker build -t medical-report-reader .
 docker run -p 8000:8000 medical-report-reader
 ```
 
+## Demo video
+
+A screen recording demonstrating the endpoints (`/reports/simplify/text`, `/reports/simplify/image` with local OCR, and the medical conflict guardrail) is included in the repository:
+
+- [View demo recording](docs/demo.webm)
+
 ## API endpoints
 
 | Method | Path | Description |
