@@ -11,3 +11,5 @@ pytest-cache-files-*/
 tmp/
 artifacts/
 Plum - FullStack.pdf
+plum-fullstack.pdf
+*.pdf
