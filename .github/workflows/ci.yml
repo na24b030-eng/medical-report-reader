@@ -1,36 +1,22 @@
-name: CI Test Suite
-
+name: Backend verification
 on: [push, pull_request]
-
 permissions:
   contents: read
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
-          cache: "pip"
-      - name: Install system OCR dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng libgl1 libglib2.0-0
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run automated test suite
-        env:
-          GEMINI_API_KEY: ""
-          PYTHONPATH: "."
-        run: |
-          python -m pytest tests/ -v --tb=short > pytest_output.log 2>&1 || {
-            cat pytest_output.log
-            ERR_MSG=$(tail -n 20 pytest_output.log | tr '\n' ' | ')
-            echo "::error title=Pytest Failure::$ERR_MSG"
-            exit 1
-          }
+          version: "0.11.3"
+          enable-cache: true
+      - run: uv sync --locked --python 3.12
+      - run: uv run ruff check app scripts tests
+      - run: uv run ruff format --check app scripts tests
+      - run: uv run pytest -q --junitxml=artifacts/tests.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: artifacts/tests.xml

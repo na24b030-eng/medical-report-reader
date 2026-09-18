@@ -1,148 +1,209 @@
 {
   "info": {
-    "name": "AI-Powered Medical Report Simplifier API",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Postman collection covering the 4-step pipeline, deterministic normalizers, OCR, anti-hallucination guardrails, and catalog endpoints."
+    "name": "Medical Report Reader",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "base_url",
       "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "gemini_api_key",
+      "value": ""
     }
   ],
   "item": [
     {
-      "name": "Health Check",
+      "name": "Health",
       "request": {
         "method": "GET",
-        "url": "{{base_url}}/api/v1/health"
-      }
+        "url": "{{base_url}}/health",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+              "pm.test('JSON response', () => pm.expect(pm.response.json()).to.have.property('status'));"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "Medical Biomarker Catalog",
+      "name": "Assignment demo",
       "request": {
         "method": "GET",
-        "url": "{{base_url}}/api/v1/catalog"
-      }
+        "url": "{{base_url}}/demo",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+              "pm.test('JSON response', () => pm.expect(pm.response.json()).to.have.property('status'));"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "1. Simplify Report - Typed Text (Sample 1)",
+      "name": "Text without LLM",
       "request": {
         "method": "POST",
+        "url": "{{base_url}}/reports/simplify/text",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"text\": \"CBC:\\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\\nWBC 11,200 /uL (High) Reference: 4000-11000\", \"use_gemini\": false}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+              "pm.test('JSON response', () => pm.expect(pm.response.json()).to.have.property('status'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Text with Gemini language",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/reports/simplify/text",
         "header": [
           {
-            "key": "Content-Type",
-            "value": "application/json"
+            "key": "X-Gemini-API-Key",
+            "value": "{{gemini_api_key}}"
           }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"text\": \"CBC: Hemoglobin 10.2 g/dL (Low) , WBC 11,200 /uL (High)\"\n}"
-        },
-        "url": "{{base_url}}/api/v1/simplify-report"
-      }
+          "raw": "{\"text\": \"CBC:\\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\\nWBC 11,200 /uL (High) Reference: 4000-11000\", \"use_gemini\": true}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+              "pm.test('JSON response', () => pm.expect(pm.response.json()).to.have.property('status'));"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "2. Simplify Report - OCR Typos (Sample 2)",
+      "name": "Local image OCR",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "url": "{{base_url}}/reports/simplify/image",
+        "header": [],
         "body": {
-          "mode": "raw",
-          "raw": "{\n  \"text\": \"CBC: Hemglobin 10.2 g/dL (Low)\\nWBC 11200 /uL (Hgh)\"\n}"
-        },
-        "url": "{{base_url}}/api/v1/simplify-report"
-      }
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "image",
+              "type": "file",
+              "src": "../samples/report.png"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+              "pm.test('JSON response', () => pm.expect(pm.response.json()).to.have.property('status'));"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "3. Simplify Report - Full Execution Trace",
+      "name": "Conflicting flag is rejected",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "url": "{{base_url}}/reports/simplify/text",
+        "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"text\": \"CBC: Hemoglobin 10.2 g/dL (Low) , WBC 11,200 /uL (High)\",\n  \"trace\": true\n}"
-        },
-        "url": "{{base_url}}/api/v1/simplify-report"
-      }
+          "raw": "{\"text\": \"Hemoglobin 10.2 g/dL (High) Reference: 12-15\", \"use_gemini\": false}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Expected HTTP status', () => pm.response.to.have.status(422));",
+              "pm.test('JSON response', () => pm.expect(pm.response.json()).to.have.property('status'));"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "4. Guardrail Verification (Ungrounded Simulation)",
+      "name": "Gemini key required only when enabled",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "url": "{{base_url}}/reports/simplify/text",
+        "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"text\": \"CBC: Hemoglobin 10.2 g/dL (Low)\",\n  \"simulate_hallucination\": true\n}"
-        },
-        "url": "{{base_url}}/api/v1/simplify-report"
-      }
-    },
-    {
-      "name": "Step 1: Extract Text & Fix Typos",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+          "raw": "{\"text\": \"CBC:\\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\\nWBC 11,200 /uL (High) Reference: 4000-11000\", \"use_gemini\": true}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
           }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"text\": \"CBC: Hemglobin 10.2 g/dL (Low)\\nWBC 11200 /uL (Hgh)\"\n}"
-        },
-        "url": "{{base_url}}/api/v1/extract-text"
-      }
-    },
-    {
-      "name": "Step 2: Normalize Tests & Reference Ranges",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Expected HTTP status', () => pm.response.to.have.status(401));",
+              "pm.test('JSON response', () => pm.expect(pm.response.json()).to.have.property('status'));"
+            ]
           }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"tests_raw\": [\n    \"Hemoglobin 10.2 g/dL (Low)\",\n    \"WBC 11200 /uL (High)\"\n  ],\n  \"confidence\": 0.8\n}"
-        },
-        "url": "{{base_url}}/api/v1/normalize-tests"
-      }
-    },
-    {
-      "name": "Step 3: Generate Plain-Language Summary",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"tests\": [\n    {\n      \"name\": \"Hemoglobin\",\n      \"value\": 10.2,\n      \"unit\": \"g/dL\",\n      \"status\": \"low\",\n      \"ref_range\": {\n        \"low\": 12.0,\n        \"high\": 15.0\n      }\n    },\n    {\n      \"name\": \"WBC\",\n      \"value\": 11200,\n      \"unit\": \"/uL\",\n      \"status\": \"high\",\n      \"ref_range\": {\n        \"low\": 4000.0,\n        \"high\": 11000.0\n      }\n    }\n  ]\n}"
-        },
-        "url": "{{base_url}}/api/v1/summarize"
-      }
+        }
+      ]
     }
   ]
 }

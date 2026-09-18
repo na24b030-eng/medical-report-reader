@@ -1,8 +1,11 @@
-node_modules
 .git
+.venv
+.uv-cache
 .env
 .env.*
 tmp
-test-results
-submission
+artifacts
+__pycache__
+.pytest_cache
+.ruff_cache
 Plum - FullStack.pdf

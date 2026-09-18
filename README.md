@@ -1,279 +1,260 @@
-# AI-Powered Medical Report Simplifier
+# Medical Report Reader
 
-A production-grade, deterministic-first backend service that parses medical lab reports (both typed text and scanned images), normalizes lab tests against standard reference catalogs, enforces strict source-evidence guardrails to prevent hallucinations, and generates patient-friendly explanations with Google Gemini and an offline-resilient fallback engine.
+Backend API that extracts biomarker results from medical reports (text or image), normalizes values with unit conversion, applies anti-hallucination guardrails, and generates grounded patient-friendly explanations.
 
----
-
-## Architectural Overview and Core Principles
+## Architecture
 
 ```
-                  ┌──────────────────────────────────────────────┐
-                  │          Input: Image or Typed Text          │
-                  └──────────────────────┬───────────────────────┘
-                                         │
-        ┌────────────────────────────────┴────────────────────────────────┐
-        │                                                                 │
-  [Image Upload]                                                     [Raw Text]
-        │                                                                 │
-        ▼                                                                 ▼
-┌───────────────────────────────┐                             ┌───────────────────────┐
-│ Dedicated Local OCR Engine    │                             │ Standard Text Buffer  │
-│ (RapidOCR ONNX / Tesseract)   │                             └───────────┬───────────┘
-└───────────────┬───────────────┘                                         │
-                │                                                         │
-                └────────────────────────┬────────────────────────────────┘
-                                         │
-                                         ▼
-                 ┌───────────────────────────────────────────────┐
-                 │ Step 1: Extractor & Typo-Correction Service   │
-                 │ - Strips formatting commas (11,200 -> 11200) │
-                 │ - Corrects OCR typos (Hemglobin -> Hemoglobin)│
-                 │ Output: tests_raw + confidence                │
-                 └───────────────────────┬───────────────────────┘
-                                         │
-                                         ▼
-                 ┌───────────────────────────────────────────────┐
-                 │ Step 2: Normalizer & Reference Engine         │
-                 │ - Deterministic value parsing                 │
-                 │ - Standard reference range lookup             │
-                 │ - Clinical status calculation (low/high/norm) │
-                 │ Output: tests + normalization_confidence      │
-                 └───────────────────────┬───────────────────────┘
-                                         │
-                                         ▼
-                 ┌───────────────────────────────────────────────┐
-                 │ Strict Guardrail: Source Evidence Check       │
-                 │ Checks that EVERY test is grounded in input   │
-                 └───────┬───────────────────────────────┬───────┘
-                         │                               │
-                [Ungrounded Test]               [All Tests Grounded]
-                         │                               │
-                         ▼                               ▼
-        ┌────────────────────────────────┐  ┌────────────────────────────────┐
-        │ Exit Condition Response        │  │ Step 3: Explanation Engine     │
-        │ status: "unprocessed"          │  │ Gemini 3.6 / Flash             │
-        │ reason: "hallucinated tests..."│  │ (or Curated Clinical Fallback) │
-        └────────────────────────────────┘  └────────────────┬───────────────┘
-                                                             │
-                                                             ▼
-                                            ┌────────────────────────────────┐
-                                            │ Step 4: Final Output Assembly  │
-                                            │ status: "ok" + tests + summary │
-                                            └────────────────────────────────┘
+Input (text or image)
+       |
+  [1. OCR]  -- local RapidOCR, CPU-only, image never leaves the server
+       |
+  [2. Extraction]  -- deterministic regex, no LLM
+       |
+  [3. Normalization]  -- unit conversion, reference range comparison, flag resolution
+       |
+  [4. Guardrail]  -- re-parse and diff to reject hallucinated or altered results
+       |
+  [5. Language]  -- constrained Gemini NLP (optional) or approved local templates
+       |
+  JSON Response
 ```
 
-### Key Architectural Decisions:
-1. **Dedicated OCR Engine for Images**: Images are read using dedicated local OCR (`rapidocr-onnxruntime` and `pytesseract`) rather than passing raw images to an LLM. This prevents extraction-phase hallucinations.
-2. **Backend Code Owns Values & Statuses**: Parsing values, formatting numbers, standardizing units, and calculating clinical statuses (`low`, `high`, `normal`) against standard reference ranges are performed **100% deterministically in Python**—not by an LLM.
-3. **Strict Source-Evidence Guardrails**: Before generating explanations, every test in the normalized results is cross-referenced against the raw input tokens. If an ungrounded test is detected, the pipeline immediately halts and returns:
-   ```json
-   {
-     "status": "unprocessed",
-     "reason": "hallucinated tests not present in input"
-   }
-   ```
-4. **Restricted Gemini Role**: Gemini is strictly constrained to translating verified findings into clear, empathetic, non-diagnostic explanations. It is barred from altering numbers or deciding medical status.
-5. **Resilient Offline Fallback**: If the Gemini API is unconfigured, rate-limited, or fails validation, the system automatically uses a curated clinical knowledge dictionary. The API never crashes or fails to respond.
+**Design principles**
 
----
+- All numeric extraction and normalization is deterministic (regex + decimal arithmetic). Gemini is never used for data extraction.
+- The optional Gemini step only selects pre-approved sentence fragments for patient-friendly wording. It cannot invent medical claims, values, diagnoses, or treatments.
+- A final guardrail re-parses the source text independently and rejects the response if any test was added, removed, or altered downstream.
+- Uploaded images are processed locally with RapidOCR. They are never sent to any external API.
 
-## Setup and Quickstart
+## Supported biomarkers
+
+Hemoglobin, WBC, Platelets, RBC, Glucose, Creatinine, TSH, Total cholesterol.
+
+Each biomarker has known aliases (including common OCR typos), canonical units, and conversion factors for alternate units.
+
+## Setup
 
 ### Prerequisites
-- Python 3.10+ (tested on Python 3.14)
-- `uv` or standard Python `venv`
 
-### Installation
+- Python 3.11 or 3.12
+- [uv](https://docs.astral.sh/uv/) package manager (recommended) or pip
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/na24b030-eng/medical-report-reader.git
-   cd medical-report-reader
-   ```
+### Install and run
 
-2. **Create virtual environment & install dependencies**:
-   ```bash
-   # Using uv (recommended, ultra-fast)
-   uv venv .venv
-   .venv\Scripts\activate     # On Windows
-   # source .venv/bin/activate # On Linux/macOS
-   uv pip install -r requirements.txt
-
-   # OR using standard pip
-   python -m venv .venv
-   .venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-
-3. **Configure Environment Variables (Optional)**:
-   Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-   Add your Gemini API key:
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   ```
-   *(Note: The system works completely out of the box even without an API key using the built-in clinical fallback engine! External users can also supply their own key directly in the web UI or via the `X-Gemini-API-Key` header).*
-
-4. **Start the Backend Server**:
-   ```bash
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
-
-5. **Open the Interactive Web UI**:
-   - **Hosted Frontend (GitHub Pages)**: [https://na24b030-eng.github.io/medical-report-reader/](https://na24b030-eng.github.io/medical-report-reader/)
-   - **Local Web UI**: [http://localhost:8000/demo](http://localhost:8000/demo)
-
-   *In the Web UI, visitors can enter their own Gemini API key for live AI explanations or leave the field empty to use the server demo key or built-in clinical fallback engine.*
-
----
-
-## API Usage and Sample Requests
-
-### 1. Main Unified Endpoint: `/api/v1/simplify-report`
-
-#### A. Text Input (Sample from PDF)
 ```bash
-curl -X POST http://localhost:8000/api/v1/simplify-report \
+# Clone
+git clone https://github.com/na24b030-eng/medical-report-reader.git
+cd medical-report-reader
+
+# Install dependencies
+uv sync
+
+# (Optional) Configure Gemini for NLP wording
+cp .env.example .env
+# Edit .env: set GEMINI_API_KEY and ALLOW_SERVER_KEY=true
+
+# Start the server
+uv run uvicorn app.main:app --reload
+
+# Open Swagger UI
+# http://127.0.0.1:8000/docs
+```
+
+### With pip (alternative)
+
+```bash
+python -m venv .venv
+.venv/Scripts/activate    # Windows
+# source .venv/bin/activate  # Linux/macOS
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+### Docker
+
+```bash
+docker build -t medical-report-reader .
+docker run -p 8000:8000 medical-report-reader
+```
+
+## API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| GET | `/demo` | Assignment example with fixture data |
+| POST | `/reports/simplify/text` | Analyze text report |
+| POST | `/reports/simplify/image` | Analyze image report (local OCR) |
+| GET | `/docs` | Swagger UI |
+
+## Sample requests
+
+### Text report (without Gemini)
+
+```bash
+curl -X POST http://127.0.0.1:8000/reports/simplify/text \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "CBC: Hemoglobin 10.2 g/dL (Low) , WBC 11,200 /uL (High)"
+    "text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000"
   }'
 ```
 
-**Expected Response (Step 4 Schema):**
+### Text report (with Gemini NLP)
+
+```bash
+curl -X POST http://127.0.0.1:8000/reports/simplify/text \
+  -H "Content-Type: application/json" \
+  -H "X-Gemini-API-Key: YOUR_KEY" \
+  -d '{
+    "text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000",
+    "use_gemini": true
+  }'
+```
+
+### Image report (local OCR)
+
+```bash
+curl -X POST http://127.0.0.1:8000/reports/simplify/image \
+  -F "image=@samples/report.png"
+```
+
+### Assignment demo endpoint
+
+```bash
+curl http://127.0.0.1:8000/demo
+```
+
+## Sample response
+
 ```json
 {
+  "status": "ok",
   "tests": [
     {
       "name": "Hemoglobin",
       "value": 10.2,
       "unit": "g/dL",
       "status": "low",
-      "ref_range": {
-        "low": 12.0,
-        "high": 15.0
-      }
+      "ref_range": { "low": 12.0, "high": 15.0 }
     },
     {
       "name": "WBC",
-      "value": 11200,
+      "value": 11200.0,
       "unit": "/uL",
       "status": "high",
-      "ref_range": {
-        "low": 4000.0,
-        "high": 11000.0
-      }
+      "ref_range": { "low": 4000.0, "high": 11000.0 }
     }
   ],
   "summary": "Low hemoglobin and high white blood cell count.",
-  "status": "ok"
-}
-```
-
-#### B. Text Input with OCR Typos (Sample from PDF)
-```bash
-curl -X POST http://localhost:8000/api/v1/simplify-report \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "CBC: Hemglobin 10.2 g/dL (Low)\nWBC 11200 /uL (Hgh)"
-  }'
-```
-
-#### C. Image Upload (Dedicated OCR)
-```bash
-curl -X POST http://localhost:8000/api/v1/simplify-report \
-  -F "file=@samples/sample_report.png"
-```
-
-#### D. Guardrail Exit Condition Trigger
-```bash
-curl -X POST http://localhost:8000/api/v1/simplify-report \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "CBC: Hemoglobin 10.2 g/dL (Low)",
-    "simulate_hallucination": true
-  }'
-```
-
-**Exit Response:**
-```json
-{
-  "status": "unprocessed",
-  "reason": "hallucinated tests not present in input"
-}
-```
-
----
-
-### 2. Isolated Step Endpoints
-
-- **Step 1 (`POST /api/v1/extract-text`)**:
-  ```bash
-  curl -X POST http://localhost:8000/api/v1/extract-text \
-    -H "Content-Type: application/json" \
-    -d '{"text": "CBC: Hemglobin 10.2 g/dL (Low)\nWBC 11200 /uL (Hgh)"}'
-  ```
-  Returns:
-  ```json
-  {
+  "explanations": [
+    "Hemoglobin carries oxygen in your red blood cells. This result is below the reference range shown in the report.",
+    "White blood cells are part of your immune system. This result is above the reference range shown in the report."
+  ],
+  "extraction": {
     "tests_raw": [
-      "Hemoglobin 10.2 g/dL (Low)",
-      "WBC 11200 /uL (High)"
+      "Hemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\n",
+      "WBC 11,200 /uL (High) Reference: 4000-11000"
     ],
-    "confidence": 0.8
+    "confidence": 1.0,
+    "confidence_basis": "Exact deterministic text parsing; not clinical confidence"
+  },
+  "normalization": {
+    "normalization_confidence": 1.0,
+    "confidence_basis": "Rule-coverage score: 1.0 for supported exact rules, 0.95 when explicit OCR typo aliases are corrected; not a probability",
+    "evidence": [
+      {
+        "test_id": "test_1",
+        "source_text": "Hemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\n",
+        "source_start": 5,
+        "source_end": 53,
+        "raw_name": "Hemoglobin",
+        "raw_value": "10.2",
+        "raw_unit": "g/dL",
+        "conversion_factor": "1",
+        "status_basis": "report_range",
+        "corrections": []
+      },
+      {
+        "test_id": "test_2",
+        "source_text": "WBC 11,200 /uL (High) Reference: 4000-11000",
+        "source_start": 53,
+        "source_end": 96,
+        "raw_name": "WBC",
+        "raw_value": "11,200",
+        "raw_unit": "/uL",
+        "conversion_factor": "1",
+        "status_basis": "report_range",
+        "corrections": []
+      }
+    ]
+  },
+  "metadata": {
+    "request_id": "sample-request",
+    "input_type": "assignment_demo",
+    "source_text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000",
+    "language_provider": "templates",
+    "language_status": "not_requested",
+    "warnings": [
+      "Educational explanation, not a diagnosis. Discuss results with your clinician."
+    ],
+    "duration_ms": 0,
+    "ocr_engine": null
   }
-  ```
-
-- **Step 2 (`POST /api/v1/normalize-tests`)**:
-  ```bash
-  curl -X POST http://localhost:8000/api/v1/normalize-tests \
-    -H "Content-Type: application/json" \
-    -d '{
-      "tests_raw": [
-        "Hemoglobin 10.2 g/dL (Low)",
-        "WBC 11200 /uL (High)"
-      ],
-      "confidence": 0.8
-    }'
-  ```
-
-- **Step 3 (`POST /api/v1/summarize`)**:
-  Accepts normalized test array and returns plain-language summary and explanations without medical diagnosis.
-
----
-
-## Running Automated Tests
-
-Run the complete test suite covering all four steps, OCR, normalizer, guardrails, and API integration:
-
-```bash
-.venv\Scripts\pytest tests\ -v
+}
 ```
 
----
+## Guardrails and error handling
 
-## Interactive API Documentation and Remote Access
+The API rejects unsafe or ambiguous input with HTTP 422 and `status: "unprocessed"`:
 
-### 1. Interactive Swagger UI
-When running the FastAPI server locally:
-- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc UI**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-- **OpenAPI JSON**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+- Conflicting flags vs reference ranges (e.g., marked "High" but value is within range)
+- Inverted reference ranges (low > high)
+- Duplicate test results requiring manual review
+- Unsupported units or unsupported biomarker names
+- Unparsed leftover content (prevents silent omission of unknown tests)
+- Precision loss during unit conversion
+- Hallucinated or altered results detected by the final guardrail
+- Prompt injection attempts in text input
 
-The Swagger UI allows interactive execution and testing of all endpoints directly in the browser with full schema validation and response inspection.
+Additional error codes: 400 (invalid request), 401 (missing API key when Gemini requested), 408 (upload timeout), 413 (body too large), 429 (capacity limit or Gemini quota), 500 (unexpected failure).
 
-### 2. Exposing Local Backend for Remote Access (ngrok)
-To share your live backend instance with external reviewers:
+## Gemini API key handling
 
-1. Start your local server:
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000
-   ```
-2. In a separate terminal, launch ngrok:
-   ```bash
-   ngrok http 8000
-   ```
-3. Share the generated public HTTPS URL (e.g. `https://xyz.ngrok-free.app/docs`) for remote Swagger UI testing, or send API requests directly to `https://xyz.ngrok-free.app/api/v1/simplify-report`.
+Gemini is optional and used only for natural-language wording, never for data extraction.
 
+- Pass `use_gemini: true` and the `X-Gemini-API-Key` header to enable Gemini NLP.
+- Without a key, the API uses approved local template explanations.
+- If Gemini is unavailable or returns an error, the API falls back to templates automatically and includes a warning.
+- Keys are per-request, never stored, and never echoed in responses.
+
+## Running tests
+
+```bash
+uv run pytest -v
+```
+
+## Project structure
+
+```
+app/
+  main.py         -- FastAPI app, routes, middleware, error handlers
+  config.py       -- Pydantic settings from .env
+  schemas.py      -- All request/response Pydantic models
+  engine.py       -- Deterministic extraction, normalization, guardrail
+  catalog.py      -- Biomarker definitions, aliases, units, conversion factors
+  language.py     -- Constrained Gemini NLP and local template fallback
+  pipeline.py     -- Orchestrates engine + language into a response
+  ocr.py          -- Local RapidOCR image processing
+  static/swagger/ -- Vendored Swagger UI assets
+tests/
+  test_api.py     -- 11 API integration tests
+  test_engine.py  -- 22 engine unit tests (including parametrized)
+samples/          -- Sample inputs and expected output
+scripts/          -- Submission preparation and demo recording tools
+docs/             -- OpenAPI spec and Postman collection
+```
+
+## Postman collection
+
+Import `docs/Plum.postman_collection.json` into Postman. Set the `base_url` variable to your server address and optionally set `gemini_api_key`.

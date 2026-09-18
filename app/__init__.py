@@ -1,1 +1,1 @@
-"""AI-Powered Medical Report Simplifier Package."""
+"""Medical report reader."""

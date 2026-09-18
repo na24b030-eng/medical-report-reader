@@ -1,19 +1,18 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "AI-Powered Medical Report Simplifier",
-    "description": "A robust backend service for OCR, test normalization, anti-hallucination guardrails, and plain-language patient explanations.",
+    "title": "Medical Report Reader",
+    "description": "Local OCR, deterministic extraction and normalization, grounded explanations. Gemini is restricted to optional NLP. No diagnosis or treatment advice.",
     "version": "1.0.0"
   },
   "paths": {
-    "/api/v1/health": {
+    "/health": {
       "get": {
         "tags": [
-          "Medical Report Simplifier"
+          "Operations"
         ],
-        "summary": "Health Check",
-        "description": "Health check endpoint providing status of dependencies.",
-        "operationId": "health_check_api_v1_health_get",
+        "summary": "Health",
+        "operationId": "health_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -26,201 +25,232 @@
         }
       }
     },
-    "/api/v1/simplify-report": {
+    "/reports/simplify/text": {
       "post": {
         "tags": [
-          "Medical Report Simplifier"
+          "Reports"
         ],
-        "summary": "Main unified endpoint for medical report simplification",
-        "description": "Accepts either:\n1. application/json with {\"text\": \"CBC: Hemoglobin 10.2 g/dL (Low)...\"}\n2. multipart/form-data with an image file\nExecutes the 4-step pipeline and returns the normalized tests, summary, and status.",
-        "operationId": "simplify_report_api_v1_simplify_report_post",
-        "parameters": [
+        "summary": "Simplify Text",
+        "operationId": "simplify_text_reports_simplify_text_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Request Timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
           {
-            "name": "trace",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Trace"
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/reports/simplify/image": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Simplify Image",
+        "operationId": "simplify_image_reports_simplify_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_simplify_image_reports_simplify_image_post"
+              }
             }
           },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Request Timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
           {
-            "name": "simulate_hallucination",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Simulate Hallucination"
-            }
+            "APIKeyHeader": []
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/FinalSuccessResult"
-                    },
-                    {
-                      "$ref": "#/components/schemas/GuardrailExitResult"
-                    },
-                    {
-                      "$ref": "#/components/schemas/PipelineStepTrace"
-                    }
-                  ],
-                  "title": "Response Simplify Report Api V1 Simplify Report Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+        ]
       }
     },
-    "/api/v1/extract-text": {
-      "post": {
+    "/demo": {
+      "get": {
         "tags": [
-          "Medical Report Simplifier"
+          "Demo"
         ],
-        "summary": "Step 1: Extract test names, values, units; fix minor typos",
-        "description": "Executes Step 1: Extracts tests_raw and confidence.",
-        "operationId": "step1_extract_api_v1_extract_text_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Step1Request"
-              }
-            }
-          },
-          "required": true
-        },
+        "summary": "Assignment example with explicitly supplied fixture ranges; no Gemini calls",
+        "operationId": "demo_demo_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtractionResult"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/normalize-tests": {
-      "post": {
-        "tags": [
-          "Medical Report Simplifier"
-        ],
-        "summary": "Step 2: Standardize names, units, ranges, and statuses",
-        "description": "Executes Step 2: Converts tests_raw into NormalizedTest objects with ranges.",
-        "operationId": "step2_normalize_api_v1_normalize_tests_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExtractionResult"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NormalizationResult"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/summarize": {
-      "post": {
-        "tags": [
-          "Medical Report Simplifier"
-        ],
-        "summary": "Step 3: Patient-friendly explanation generation",
-        "description": "Executes Step 3: Generates plain-language explanation without medical diagnosis.\nAccepts either a list of NormalizedTest or a NormalizationResult object.",
-        "operationId": "step3_summarize_api_v1_summarize_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "items": {
-                      "$ref": "#/components/schemas/NormalizedTest"
-                    },
-                    "type": "array"
-                  },
-                  {
-                    "$ref": "#/components/schemas/NormalizationResult"
-                  }
-                ],
-                "title": "Payload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExplanationResult"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ReportResponse"
                 }
               }
             }
@@ -231,178 +261,287 @@
   },
   "components": {
     "schemas": {
-      "ExplanationResult": {
+      "Body_simplify_image_reports_simplify_image_post": {
         "properties": {
-          "summary": {
+          "image": {
             "type": "string",
-            "title": "Summary",
-            "description": "One-sentence plain-language overview of abnormal findings"
+            "contentMediaType": "application/octet-stream",
+            "title": "Image",
+            "description": "PNG, JPEG or WebP; max 5 MB, 16 megapixels; crop to result lines"
           },
-          "explanations": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Explanations",
-            "description": "Plain-language, non-diagnostic explanations for abnormal findings"
+          "use_gemini": {
+            "type": "boolean",
+            "title": "Use Gemini",
+            "default": false
           }
         },
         "type": "object",
         "required": [
-          "summary",
-          "explanations"
+          "image"
         ],
-        "title": "ExplanationResult"
+        "title": "Body_simplify_image_reports_simplify_image_post"
       },
-      "ExtractionResult": {
+      "ErrorResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "error",
+              "unprocessed"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "reason",
+          "request_id"
+        ],
+        "title": "ErrorResponse"
+      },
+      "Evidence": {
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "title": "Test Id"
+          },
+          "source_text": {
+            "type": "string",
+            "title": "Source Text"
+          },
+          "source_start": {
+            "type": "integer",
+            "title": "Source Start"
+          },
+          "source_end": {
+            "type": "integer",
+            "title": "Source End"
+          },
+          "raw_name": {
+            "type": "string",
+            "title": "Raw Name"
+          },
+          "raw_value": {
+            "type": "string",
+            "title": "Raw Value"
+          },
+          "raw_unit": {
+            "type": "string",
+            "title": "Raw Unit"
+          },
+          "conversion_factor": {
+            "type": "string",
+            "title": "Conversion Factor"
+          },
+          "status_basis": {
+            "type": "string",
+            "enum": [
+              "report_range",
+              "report_flag",
+              "unavailable"
+            ],
+            "title": "Status Basis"
+          },
+          "corrections": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Corrections"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "test_id",
+          "source_text",
+          "source_start",
+          "source_end",
+          "raw_name",
+          "raw_value",
+          "raw_unit",
+          "conversion_factor",
+          "status_basis",
+          "corrections"
+        ],
+        "title": "Evidence"
+      },
+      "Extraction": {
         "properties": {
           "tests_raw": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Tests Raw",
-            "description": "List of raw test lines extracted from text/image with typos corrected"
+            "title": "Tests Raw"
           },
           "confidence": {
             "type": "number",
             "maximum": 1.0,
             "minimum": 0.0,
-            "title": "Confidence",
-            "description": "Confidence score for the extraction step",
-            "default": 0.8
+            "title": "Confidence"
+          },
+          "confidence_basis": {
+            "type": "string",
+            "title": "Confidence Basis"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
-          "tests_raw"
+          "tests_raw",
+          "confidence",
+          "confidence_basis"
         ],
-        "title": "ExtractionResult"
+        "title": "Extraction"
       },
-      "FinalSuccessResult": {
+      "Metadata": {
         "properties": {
-          "tests": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "input_type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image",
+              "assignment_demo"
+            ],
+            "title": "Input Type"
+          },
+          "source_text": {
+            "type": "string",
+            "title": "Source Text"
+          },
+          "language_provider": {
+            "type": "string",
+            "enum": [
+              "templates",
+              "gemini"
+            ],
+            "title": "Language Provider"
+          },
+          "language_status": {
+            "type": "string",
+            "enum": [
+              "not_requested",
+              "applied",
+              "fallback"
+            ],
+            "title": "Language Status"
+          },
+          "warnings": {
             "items": {
-              "$ref": "#/components/schemas/NormalizedTest"
+              "type": "string"
             },
             "type": "array",
-            "title": "Tests",
-            "description": "Normalized lab test results"
+            "title": "Warnings"
           },
-          "summary": {
-            "type": "string",
-            "title": "Summary",
-            "description": "Patient-friendly summary"
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms"
           },
-          "status": {
-            "type": "string",
-            "const": "ok",
-            "title": "Status",
-            "default": "ok"
+          "ocr_engine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocr Engine"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
-          "tests",
-          "summary"
+          "request_id",
+          "input_type",
+          "source_text",
+          "language_provider",
+          "language_status",
+          "warnings",
+          "duration_ms"
         ],
-        "title": "FinalSuccessResult"
+        "title": "Metadata"
       },
-      "GuardrailExitResult": {
+      "Normalization": {
         "properties": {
-          "status": {
-            "type": "string",
-            "const": "unprocessed",
-            "title": "Status",
-            "default": "unprocessed"
-          },
-          "reason": {
-            "type": "string",
-            "title": "Reason",
-            "description": "Reason the processing was stopped",
-            "default": "hallucinated tests not present in input"
-          }
-        },
-        "type": "object",
-        "title": "GuardrailExitResult"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "NormalizationResult": {
-        "properties": {
-          "tests": {
-            "items": {
-              "$ref": "#/components/schemas/NormalizedTest"
-            },
-            "type": "array",
-            "title": "Tests",
-            "description": "List of standardized, validated medical test items"
-          },
           "normalization_confidence": {
             "type": "number",
             "maximum": 1.0,
             "minimum": 0.0,
-            "title": "Normalization Confidence",
-            "description": "Confidence score for the normalization step",
-            "default": 0.84
+            "title": "Normalization Confidence"
+          },
+          "confidence_basis": {
+            "type": "string",
+            "title": "Confidence Basis"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "title": "Evidence"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
-          "tests"
+          "normalization_confidence",
+          "confidence_basis",
+          "evidence"
         ],
-        "title": "NormalizationResult"
+        "title": "Normalization"
       },
       "NormalizedTest": {
         "properties": {
           "name": {
             "type": "string",
-            "title": "Name",
-            "description": "Standardized test name"
+            "title": "Name"
           },
           "value": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "title": "Value",
-            "description": "Numeric test value"
+            "type": "number",
+            "title": "Value"
           },
           "unit": {
             "type": "string",
-            "title": "Unit",
-            "description": "Standardized unit of measurement"
+            "title": "Unit"
           },
           "status": {
             "type": "string",
             "enum": [
               "low",
+              "normal",
               "high",
-              "normal"
+              "unknown"
             ],
-            "title": "Status",
-            "description": "Clinical status relative to reference range"
+            "title": "Status"
           },
           "ref_range": {
-            "$ref": "#/components/schemas/RefRange",
-            "description": "Reference range for standard adult"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReferenceRange"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "name",
@@ -413,115 +552,101 @@
         ],
         "title": "NormalizedTest"
       },
-      "PipelineStepTrace": {
-        "properties": {
-          "raw_ocr_or_text": {
-            "type": "string",
-            "title": "Raw Ocr Or Text"
-          },
-          "step1_extraction": {
-            "$ref": "#/components/schemas/ExtractionResult"
-          },
-          "step2_normalization": {
-            "$ref": "#/components/schemas/NormalizationResult"
-          },
-          "step3_explanation": {
-            "$ref": "#/components/schemas/ExplanationResult"
-          },
-          "final_output": {
-            "$ref": "#/components/schemas/FinalSuccessResult"
-          },
-          "explanation_source": {
-            "type": "string",
-            "enum": [
-              "gemini",
-              "fallback"
-            ],
-            "title": "Explanation Source"
-          }
-        },
-        "type": "object",
-        "required": [
-          "raw_ocr_or_text",
-          "step1_extraction",
-          "step2_normalization",
-          "step3_explanation",
-          "final_output",
-          "explanation_source"
-        ],
-        "title": "PipelineStepTrace"
-      },
-      "RefRange": {
+      "ReferenceRange": {
         "properties": {
           "low": {
             "type": "number",
-            "title": "Low",
-            "description": "Lower bound of reference range"
+            "title": "Low"
           },
           "high": {
             "type": "number",
-            "title": "High",
-            "description": "Upper bound of reference range"
+            "title": "High"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "low",
           "high"
         ],
-        "title": "RefRange"
+        "title": "ReferenceRange"
       },
-      "Step1Request": {
+      "ReportResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "tests": {
+            "items": {
+              "$ref": "#/components/schemas/NormalizedTest"
+            },
+            "type": "array",
+            "title": "Tests"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "explanations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Explanations"
+          },
+          "extraction": {
+            "$ref": "#/components/schemas/Extraction"
+          },
+          "normalization": {
+            "$ref": "#/components/schemas/Normalization"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tests",
+          "summary",
+          "explanations",
+          "extraction",
+          "normalization",
+          "metadata"
+        ],
+        "title": "ReportResponse"
+      },
+      "TextRequest": {
         "properties": {
           "text": {
             "type": "string",
-            "title": "Text",
-            "description": "Raw report text",
-            "default": ""
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "use_gemini": {
+            "type": "boolean",
+            "title": "Use Gemini",
+            "default": false
           }
         },
-        "type": "object",
-        "title": "Step1Request"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
+        "additionalProperties": false,
         "type": "object",
         "required": [
-          "loc",
-          "msg",
-          "type"
+          "text"
         ],
-        "title": "ValidationError"
+        "title": "TextRequest"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "description": "Optional per-request key. Used only when use_gemini=true; never saved.",
+        "in": "header",
+        "name": "X-Gemini-API-Key"
       }
     }
   }

@@ -1,31 +1,13 @@
-# Virtual environment
 .venv/
-venv/
-ENV/
-
-# Python cache
+.uv-cache/
 __pycache__/
-*.py[cod]
-*$py.class
-*.pytest_cache/
 .pytest_cache/
-
-# Environment variables
+pytest-cache-files-*/
+.ruff_cache/
+*.pyc
 .env
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# Node / JS artifacts
-node_modules/
-test-results/
-.playwright/
-submission/
-
-# Logs & temporary files
-*.log
+.env.*
+!.env.example
 tmp/
-.DS_Store
-Thumbs.db
+artifacts/
+Plum - FullStack.pdf

@@ -1,4 +1,5 @@
 {
+  "status": "ok",
   "tests": [
     {
       "name": "Hemoglobin",
@@ -6,63 +7,74 @@
       "unit": "g/dL",
       "status": "low",
       "ref_range": {
-        "low": 12,
-        "high": 15
+        "low": 12.0,
+        "high": 15.0
       }
     },
     {
       "name": "WBC",
-      "value": 11200,
+      "value": 11200.0,
       "unit": "/uL",
       "status": "high",
       "ref_range": {
-        "low": 4000,
-        "high": 11000
+        "low": 4000.0,
+        "high": 11000.0
       }
     }
   ],
-  "summary": "Hemoglobin: low; WBC: high.",
-  "status": "ok",
+  "summary": "Low hemoglobin and high white blood cell count.",
   "explanations": [
-    {
-      "name": "Hemoglobin",
-      "text": "Hemoglobin is the protein in red blood cells that carries oxygen. This result is below the reference range provided in the report."
-    },
-    {
-      "name": "WBC",
-      "text": "White blood cells are part of your immune system. This result is above the reference range provided in the report."
-    }
+    "Hemoglobin carries oxygen in your red blood cells. This result is below the reference range shown in the report.",
+    "White blood cells are part of your immune system. This result is above the reference range shown in the report."
   ],
-  "metadata": {
-    "mode": "demo",
-    "source_text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000",
+  "extraction": {
     "tests_raw": [
-      "Hemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0",
+      "Hemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\n",
       "WBC 11,200 /uL (High) Reference: 4000-11000"
     ],
+    "confidence": 1.0,
+    "confidence_basis": "Exact deterministic text parsing; not clinical confidence"
+  },
+  "normalization": {
+    "normalization_confidence": 1.0,
+    "confidence_basis": "Rule-coverage score: 1.0 for supported exact rules, 0.95 when explicit OCR typo aliases are corrected; not a probability",
     "evidence": [
       {
-        "name": "Hemoglobin",
-        "source": "Hemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0",
+        "test_id": "test_1",
+        "source_text": "Hemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\n",
+        "source_start": 5,
+        "source_end": 53,
         "raw_name": "Hemoglobin",
         "raw_value": "10.2",
         "raw_unit": "g/dL",
-        "multiplier": 1,
-        "status_basis": "report_range"
+        "conversion_factor": "1",
+        "status_basis": "report_range",
+        "corrections": []
       },
       {
-        "name": "WBC",
-        "source": "WBC 11,200 /uL (High) Reference: 4000-11000",
+        "test_id": "test_2",
+        "source_text": "WBC 11,200 /uL (High) Reference: 4000-11000",
+        "source_start": 53,
+        "source_end": 96,
         "raw_name": "WBC",
         "raw_value": "11,200",
         "raw_unit": "/uL",
-        "multiplier": 1,
-        "status_basis": "report_range"
+        "conversion_factor": "1",
+        "status_basis": "report_range",
+        "corrections": []
       }
+    ]
+  },
+  "metadata": {
+    "request_id": "sample-request",
+    "input_type": "assignment_demo",
+    "source_text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000",
+    "language_provider": "templates",
+    "language_status": "not_requested",
+    "warnings": [
+      "Educational explanation, not a diagnosis. Discuss results with your clinician."
     ],
-    "validation": "Values, units, ranges and statuses were parsed and validated by deterministic code.",
-    "confidence": null,
-    "confidence_note": "No calibrated clinical confidence score is available.",
-    "note": "Educational explanation, not a diagnosis. Review results with your clinician."
+    "duration_ms": 0,
+    "ocr_engine": null
   }
 }
