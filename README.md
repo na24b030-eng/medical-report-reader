@@ -119,7 +119,7 @@ curl -X POST http://127.0.0.1:8000/reports/simplify/image \
   -F "image=@samples/report.png"
 ```
 
-### Assignment demo endpoint
+### Demo endpoint
 
 ```bash
 curl http://127.0.0.1:8000/demo
