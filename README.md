@@ -94,42 +94,92 @@ A screen recording demonstrating the endpoints (`/reports/simplify/text`, `/repo
 | POST | `/reports/simplify/image` | Analyze image report (local OCR) |
 | GET | `/docs` | Swagger UI |
 
-## Sample requests
+## API usage examples
 
-### Text report (without Gemini)
+### 1. Text report (Deterministic - No external AI)
 
+#### cURL
 ```bash
 curl -X POST http://127.0.0.1:8000/reports/simplify/text \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000"
+    "text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000",
+    "use_gemini": false
   }'
 ```
 
-### Text report (with Gemini NLP)
+#### Python (requests)
+```python
+import requests
+
+url = "http://127.0.0.1:8000/reports/simplify/text"
+payload = {
+    "text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000",
+    "use_gemini": False
+}
+response = requests.post(url, json=payload)
+data = response.json()
+print("Status:", data["status"])
+for test in data["tests"]:
+    print(f"- {test['name']}: {test['value']} {test['unit']} ({test['status']})")
+print("Summary:", data["summary"])
+```
+
+#### JavaScript (fetch / Node.js)
+```javascript
+const response = await fetch("http://127.0.0.1:8000/reports/simplify/text", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    text: "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000",
+    use_gemini: false
+  })
+});
+const data = await response.json();
+console.log(data.summary);
+```
+
+### 2. Image report (Local RapidOCR on CPU)
+
+#### cURL
+```bash
+curl -X POST http://127.0.0.1:8000/reports/simplify/image \
+  -F "image=@samples/report.png" \
+  -F "use_gemini=false"
+```
+
+#### Python (requests)
+```python
+import requests
+
+url = "http://127.0.0.1:8000/reports/simplify/image"
+with open("samples/report.png", "rb") as f:
+    files = {"image": ("report.png", f, "image/png")}
+    data = {"use_gemini": "false"}
+    response = requests.post(url, files=files, data=data)
+print(response.json())
+```
+
+### 3. Text report with optional Gemini NLP
+
+Pass `use_gemini: true` and provide the `X-Gemini-API-Key` header:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/reports/simplify/text \
   -H "Content-Type: application/json" \
-  -H "X-Gemini-API-Key: YOUR_KEY" \
+  -H "X-Gemini-API-Key: YOUR_GEMINI_API_KEY" \
   -d '{
     "text": "CBC:\nHemoglobin 10.2 g/dL (Low) Reference: 12.0-15.0\nWBC 11,200 /uL (High) Reference: 4000-11000",
     "use_gemini": true
   }'
 ```
 
-### Image report (local OCR)
-
-```bash
-curl -X POST http://127.0.0.1:8000/reports/simplify/image \
-  -F "image=@samples/report.png"
-```
-
-### Demo endpoint
+### 4. Assignment demo endpoint
 
 ```bash
 curl http://127.0.0.1:8000/demo
 ```
+
 
 ## Sample response
 
