@@ -28,9 +28,9 @@ jobs:
           GEMINI_API_KEY: ""
           PYTHONPATH: "."
         run: |
-          echo "### Automated Test Suite Execution" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          python -m pytest tests/ -v --tb=short 2>&1 | tee -a $GITHUB_STEP_SUMMARY
-          test_exit=${PIPESTATUS[0]}
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          exit $test_exit
+          python -m pytest tests/ -v --tb=short > pytest_output.log 2>&1 || {
+            cat pytest_output.log
+            ERR_MSG=$(tail -n 20 pytest_output.log | tr '\n' ' | ')
+            echo "::error title=Pytest Failure::$ERR_MSG"
+            exit 1
+          }
